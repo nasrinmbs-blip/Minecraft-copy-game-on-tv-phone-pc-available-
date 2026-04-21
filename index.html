@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minecraft Ultra - Free Edition</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; touch-action: none; background: #000; user-select: none; -webkit-user-select: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; color: white; font-size: 24px; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; opacity: 0.8; text-shadow: 0 0 2px #000; }
+        
+        /* Intro Screen */
+        #intro-screen { position: absolute; inset: 0; background: url('https://picsum.photos/seed/minecraft/1920/1080?blur=2') center/cover; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-shadow: 2px 2px 0 #000; }
+        #intro-screen h1 { font-size: 50px; color: #ffcc00; margin: 0; border-bottom: 4px solid #fff; padding-bottom: 10px; }
+        #intro-screen h3 { margin-top: 5px; color: #ddd; }
+        .intro-input { padding: 12px; margin: 10px; font-size: 16px; border: 2px solid #555; background: rgba(0,0,0,0.7); color: white; text-align: center; width: 200px; }
+        .play-btn { padding: 15px 50px; font-size: 24px; background: #55aa55; color: white; border: 4px solid #fff; cursor: pointer; font-weight: bold; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .play-btn:active { transform: scale(0.95); }
+
+        /* UI Overlay */
+        .title-text { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); color: #fff; font-weight: bold; font-size: 12px; z-index: 20; text-shadow: 1px 1px 0 #000; opacity: 0.8; }
+        #ui-overlay { position: absolute; top: 25px; left: 10px; z-index: 20; color: white; pointer-events: none; text-shadow: 1px 1px 0 #000; }
+        .hearts { font-size: 14px; letter-spacing: 1px; margin-bottom: 2px; color: #ff2e2e; }
+        .food { font-size: 14px; letter-spacing: 1px; margin-bottom: 2px; }
+        .xp-container { display: flex; align-items: center; gap: 5px; margin-top: 5px; }
+        .xp-bar { width: 120px; height: 8px; background: #222; border: 1px solid #000; border-radius: 4px; overflow: hidden; }
+        #xp-fill { width: 0%; height: 100%; background: #00ff00; }
+        #xp-level { font-size: 12px; font-weight: bold; color: #00ff00; }
+        
+        /* Top Right Buttons */
+        #top-btns { position: absolute; top: 25px; right: 10px; display: flex; gap: 5px; z-index: 50; flex-wrap: wrap; justify-content: flex-end; max-width: 200px; }
+        .top-btn { padding: 8px 10px; background: rgba(0,0,0,0.7); color: white; border: 2px solid #aaa; font-weight: bold; border-radius: 5px; font-size: 10px; cursor: pointer; pointer-events: auto; margin-bottom: 5px; }
+        #mode-btn { color: gold; border-color: gold; }
+
+        /* Controls */
+        #controls { position: absolute; bottom: 70px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 30; }
+        .joystick-zone { width: 110px; height: 110px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); position: relative; }
+        #stick { width: 45px; height: 45px; background: #fff; border-radius: 50%; position: absolute; top: 32.5px; left: 32.5px; opacity: 0.6; }
+        .btns-right { display: flex; flex-direction: column; gap: 10px; }
+        .act-btn { width: 60px; height: 60px; background: rgba(0,0,0,0.6); border: 2px solid #fff; border-radius: 50%; color: white; font-size: 9px; font-weight: bold; display: flex; align-items: center; justify-content: center; text-align: center; }
+
+        /* Hotbar */
+        #hotbar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 3px; background: rgba(0,0,0,0.85); padding: 5px; border-radius: 5px; z-index: 40; border: 1px solid #555; max-width: 95vw; overflow-x: auto; }
+        .slot { min-width: 42px; height: 42px; border: 2px solid #555; background: #222; color: white; font-size: 8px; display: flex; align-items: center; justify-content: center; text-align: center; flex-direction: column; cursor: pointer; pointer-events: auto; }
+        .slot.active { border-color: #fff; background: #444; box-shadow: 0 0 10px #fff; }
+
+        /* Menus */
+        .menu { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-height: 80%; background: rgba(0,0,0,0.95); border: 4px solid #555; z-index: 2000; padding: 15px; color: white; text-align: center; overflow-y: auto; border-radius: 10px; pointer-events: auto; }
+        .menu h2 { margin-top: 0; color: #ffcc00; font-size: 18px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 5px; margin-top: 10px; }
+        .grid-item { background: #333; border: 2px solid #777; padding: 10px 5px; font-size: 9px; cursor: pointer; }
+        .grid-item:hover { border-color: #fff; }
+        .close-btn { margin-top: 15px; padding: 10px 20px; background: #ff2e2e; color: white; border: 2px solid #fff; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        
+        /* Death Screen */
+        #death-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,0,0,0.5); z-index: 200; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
+        #death-screen h1 { font-size: 40px; text-shadow: 2px 2px 0 #000; margin: 0 0 20px 0; }
+        
+        @keyframes splashPulse {
+            0% { transform: scale(1) rotate(-15deg); }
+            100% { transform: scale(1.1) rotate(-15deg); }
+        }
+        .splash-text {
+            position: absolute;
+            right: 0%;
+            bottom: -15px;
+            color: #ffff00;
+            text-shadow: 3px 3px 0 #3b3b00;
+            font-size: 32px;
+            font-weight: bold;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            animation: splashPulse 0.4s infinite alternate;
+            z-index: 10;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Intro Screen -->
+    <div id="intro-screen" style="background: #3b2514 url('https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/master/assets/minecraft/textures/block/dirt.png') repeat; background-size: 128px 128px; image-rendering: pixelated; box-shadow: inset 0 0 200px rgba(0,0,0,0.9);">
+        <!-- Background Logo Watermark -->
+        <img src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" alt="Branding" style="position: absolute; top: 20px; left: 20px; width: 80px; opacity: 0.3; pointer-events: none;">
+        
+        <div style="position: relative; text-align: center; margin-bottom: 20px;">
+            <img src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" alt="Minecraft Logo" style="width: 200px; margin-bottom: 10px; filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5));">
+            <img src="https://static.wikia.nocookie.net/minecraft_gamepedia/images/1/1a/Grass_Block.png" alt="Grass Block" style="width: 80px; height: 80px; filter: drop-shadow(0px 15px 15px rgba(0,0,0,0.9)); margin-bottom: 20px;">
+            <div style="font-family: 'Segoe UI', sans-serif; font-weight: 900; font-size: 38px; color: #ffeb3b; text-transform: uppercase; letter-spacing: 2px; text-shadow: 4px 4px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; line-height: 1; padding: 10px;">
+                Minecraft <span style="display: block; font-size: 24px; color: #fff;">free edition</span>
+                <div class="splash-text" style="right: -40px; bottom: -10px; font-size: 24px; color: #ffeb3b;">Free Edition!</div>
+            </div>
+        </div>
+        <h2 style="color: #64dd17; text-shadow: 2px 2px 0 #000; margin-top: 15px; margin-bottom: 15px; font-size: 16px; font-weight: 800; letter-spacing: 1px;">🎮 MULTIPLAYER ONLINE</h2>
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); width: 260px;">
+            <input type="text" id="player-name" class="intro-input" placeholder="Enter Player Name" value="Steve" style="margin: 0 0 10px 0; width: 100%; border-radius: 4px; box-sizing: border-box; background: rgba(0,0,0,0.6); border: 2px solid #333;">
+            <button class="play-btn" id="btn-login-google" style="background: #4285F4; font-size: 14px; width: 100%; padding: 12px; margin: 0 0 10px 0; border: none; border-radius: 4px; display: block; font-weight: normal;">Sign in with Google</button>
+            <button class="play-btn" id="btn-play" style="background: #4caf50; width: 100%; margin: 0; border-radius: 4px; font-size: 24px; box-shadow: 0 4px 0 #2e7d32;">PLAY</button>
+        </div>
+        <button class="top-btn" style="margin-top: 15px; padding: 10px 30px; font-size: 14px; opacity: 0.8;" onclick="toggleMenu('settings-menu')">⚙️ SETTINGS</button>
+    </div>
+
+    <div class="title-text" id="ui-title" style="display:none;">Minecraft Free Edition</div>
+    <div id="crosshair" style="display:none;">+</div>
+    
+    <div id="top-btns" style="display:none;">
+        <button id="mode-btn" class="top-btn" onclick="cycleMode()">SURVIVAL</button>
+        <button class="top-btn" onclick="switchCamera()">🎥 CAM</button>
+        <button class="top-btn" onclick="toggleMenu('inventory-menu')">🎒 INV</button>
+        <button class="top-btn" onclick="toggleMenu('settings-menu')">⚙️ SET</button>
+    </div>
+    
+    <div id="ui-overlay" style="display:none;">
+        <div id="player-nametag" style="font-size: 12px; color: gold; margin-bottom: 5px;">Player: Steve</div>
+        <div id="hearts" class="hearts">❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️</div>
+        <div id="food" class="food">🍗🍗🍗🍗🍗🍗🍗🍗🍗🍗</div>
+        <div class="xp-container">
+            <div id="xp-level">1</div>
+            <div class="xp-bar"><div id="xp-fill"></div></div>
+        </div>
+        <div id="status-text" style="font-size: 10px; margin-top: 5px; background: rgba(0,0,0,0.4); padding: 2px;">Dim: Overworld</div>
+        <div id="online-count" style="font-size: 10px; margin-top: 5px; color: #00ffff; background: rgba(0,0,0,0.4); padding: 2px;">Online: 1</div>
+    </div>
+
+    <div id="controls" style="display:none;">
+        <div class="joystick-zone"><div id="stick"></div></div>
+        <div class="btns-right">
+            <div class="act-btn" id="btn-hit">HIT /<br>MINE</div>
+            <div class="act-btn" id="btn-place">PLACE /<br>USE</div>
+            <div class="act-btn" id="btn-jump">JUMP</div>
+        </div>
+    </div>
+
+    <div id="hotbar" style="display:none;">
+        <div class="slot active" data-type="netherite_sword">N.SWORD 🗡️</div>
+        <div class="slot" data-type="diamond_pickaxe">D.PICK ⛏️</div>
+        <div class="slot" data-type="stone">STONE 🪨</div>
+        <div class="slot" data-type="wood">WOOD 🪵</div>
+        <div class="slot" data-type="tnt">TNT 🧨</div>
+        <div class="slot" data-type="apple">APPLE 🍎</div>
+        <div class="slot" data-type="netherrack">NETHER 🔴</div>
+        <div class="slot" data-type="end_portal">END 👁️</div>
+    </div>
+
+    <!-- Inventory Menu -->
+    <div id="inventory-menu" class="menu">
+        <h2>BIG INVENTORY & ARMOR</h2>
+        
+        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
+            <div id="armor-head" style="border: 1px solid #fff; padding: 5px; font-size: 10px; width: 40px; overflow: hidden;">HEAD<br>🛡️</div>
+            <div id="armor-body" style="border: 1px solid #fff; padding: 5px; font-size: 10px; width: 40px; overflow: hidden;">BODY<br>🛡️</div>
+            <div id="armor-legs" style="border: 1px solid #fff; padding: 5px; font-size: 10px; width: 40px; overflow: hidden;">LEGS<br>🛡️</div>
+            <div id="armor-feet" style="border: 1px solid #fff; padding: 5px; font-size: 10px; width: 40px; overflow: hidden;">FEET<br>🛡️</div>
+        </div>
+
+        <p style="font-size: 10px; color: #aaa;">Click an item to equip it to your hotbar or armor slots.</p>
+        <div class="grid" id="inv-grid">
+            <!-- Populated by JS -->
+        </div>
+        <button class="close-btn" onclick="toggleMenu('inventory-menu')">CLOSE</button>
+    </div>
+
+    <!-- Settings Menu -->
+    <div id="settings-menu" class="menu">
+        <h2>SETTINGS</h2>
+        <div style="text-align: left; font-size: 12px; line-height: 2;">
+            <label>Render Distance: <span id="dist-val">8</span></label><br>
+            <input type="range" id="render-dist" min="4" max="16" value="8" onchange="document.getElementById('dist-val').innerText=this.value; renderDistance=parseInt(this.value);"><br>
+            
+            <label>Graphics: </label>
+            <button onclick="alert('Graphics set to ULTRA')">ULTRA</button>
+            <button onclick="alert('Graphics set to FAST')">FAST</button><br>
+            
+            <label>Seed: </label>
+            <input type="text" value="998273" style="width: 80px; background: #222; color: white; border: 1px solid #555;"><br>
+            
+            <button onclick="resetWorld()" style="margin-top: 10px; padding: 5px; background: #aa0000; color: white; border: none;">GENERATE NEW WORLD</button>
+            <button onclick="toggleMenu('addons-menu')" style="margin-top: 10px; padding: 5px; background: #4b0082; color: white; border: none; display: block; width: 100%;">🧩 ADD-ON SETTINGS</button>
+        </div>
+        <button class="close-btn" onclick="toggleMenu('settings-menu')">CLOSE</button>
+    </div>
+
+    <!-- Add-ons Menu -->
+    <div id="addons-menu" class="menu">
+        <h2>ADD-ON SETTINGS</h2>
+        <div style="text-align: left; font-size: 12px;">
+            <div style="margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;">
+                <strong>Extra Mobs</strong>
+                <input type="checkbox" checked onchange="alert('Extra Mobs toggled')">
+            </div>
+            <div style="margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;">
+                <strong>Auto-Craft</strong>
+                <input type="checkbox" onchange="alert('Auto-Crafting toggled')">
+            </div>
+            <div style="margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;">
+                <strong>Unlimited Resources</strong>
+                <input type="checkbox" onchange="if(this.checked) gameMode='creative'; else gameMode='survival';">
+            </div>
+        </div>
+        <button class="close-btn" onclick="toggleMenu('addons-menu')">CLOSE</button>
+    </div>
+
+    <!-- Trading Menu -->
+    <div id="trading-menu" class="menu">
+        <h2>VILLAGER TRADING</h2>
+        <div class="grid">
+            <div class="grid-item" onclick="trade('emerald', 'diamond_sword')">10 Emeralds ➡️ Diamond Sword</div>
+            <div class="grid-item" onclick="trade('emerald', 'golden_apple')">5 Emeralds ➡️ Golden Apple</div>
+            <div class="grid-item" onclick="trade('wood', 'emerald')">20 Wood ➡️ 1 Emerald</div>
+        </div>
+        <button class="close-btn" onclick="toggleMenu('trading-menu')">CLOSE</button>
+    </div>
+
+    <!-- Crafting Menu -->
+    <div id="crafting-menu" class="menu">
+        <h2>CRAFTING TABLE</h2>
+        <div class="grid">
+            <div class="grid-item" onclick="craft('wood', 2, 'stick')">2 Wood ➡️ 4 Sticks</div>
+            <div class="grid-item" onclick="craft('wood', 3, 'wood_pickaxe')">3 Wood + 2 Sticks ➡️ Wood Pickaxe</div>
+            <div class="grid-item" onclick="craft('iron_ore', 3, 'iron_pickaxe')">3 Iron + 2 Sticks ➡️ Iron Pickaxe</div>
+            <div class="grid-item" onclick="craft('diamond_ore', 3, 'diamond_pickaxe')">3 Diamond + 2 Sticks ➡️ Diamond Pickaxe</div>
+        </div>
+        <button class="close-btn" onclick="toggleMenu('crafting-menu')">CLOSE</button>
+    </div>
+
+    <!-- Death Screen -->
+    <div id="death-screen">
+        <h1>YOU DIED!</h1>
+        <button class="close-btn" onclick="respawn()">RESPAWN</button>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.136.0';
+        import { io } from 'https://cdn.socket.io/4.8.1/socket.io.esm.min.js';
+        import { auth, provider, signInWithPopup, onAuthStateChanged } from './firebase.ts';
+
+        const socket = io();
+        const otherPlayers = new Map();
+
+        // --- Google Login ---
+        let loginInProgress = false;
+        document.getElementById('btn-login-google').onclick = async () => {
+            if (loginInProgress) return;
+            loginInProgress = true;
+            const loginBtn = document.getElementById('btn-login-google');
+            const originalText = loginBtn.innerText;
+            loginBtn.innerText = "Signing in...";
+            loginBtn.disabled = true;
+
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                document.getElementById('player-name').value = user.displayName || 'Steve';
+                loginBtn.innerText = `Signed in as ${user.displayName}`;
+                loginBtn.style.background = '#0f9d58';
+                loginBtn.disabled = false;
+            } catch (error) {
+                loginBtn.innerText = originalText;
+                loginBtn.disabled = false;
+                
+                if (error.code === 'auth/popup-closed-by-user') {
+                    console.log("Login popup closed by user.");
+                } else if (error.code === 'auth/cancelled-popup-request') {
+                    console.log("Login popup request was cancelled by a newer request or environment change.");
+                } else if (error.code === 'auth/popup-blocked') {
+                    alert("Sign-in popup was blocked by your browser. Please allow popups for this site.");
+                } else {
+                    console.error("Login failed", error);
+                    alert("Login failed: " + error.message);
+                }
+            } finally {
+                loginInProgress = false;
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('player-name').value = user.displayName || 'Player';
+                document.getElementById('btn-login-google').innerText = `Signed in as ${user.displayName}`;
+                document.getElementById('btn-login-google').style.background = '#0f9d58';
+            }
+        });
+
+        // --- Core Setup ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x87ceeb, 1.0); // Fallback sky color
+        document.body.appendChild(renderer.domElement);
+
+        // --- State Variables ---
+        window.worldBlocks = new Map();
+        const entities = [];
+        window.gameMode = 'survival'; // survival, creative, spectator, hardcore
+        const modes = ['survival', 'creative', 'spectator', 'hardcore'];
+        let currentModeIdx = 0;
+        
+        let selectedItem = 'netherite_sword';
+        let playerHP = 100, hunger = 100, xp = 0, level = 1;
+        let isSwimming = false, isGrounded = true, velocityY = 0;
+        window.renderDistance = 8;
+        let currentDimension = 'overworld'; // overworld, nether, end
+        let isThirdPerson = false;
+        let gameStarted = false;
+
+        // --- Player Model (For 3rd Person) ---
+        const playerGroup = new THREE.Group();
+        scene.add(playerGroup);
+        
+        const playerBody = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, 0.4), new THREE.MeshLambertMaterial({ color: 0x00aaff }));
+        playerBody.position.y = 0.6;
+        playerGroup.add(playerBody);
+        
+        const playerHead = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshLambertMaterial({ color: 0xffccaa }));
+        playerHead.position.y = 1.4;
+        playerGroup.add(playerHead);
+        
+        const playerBodyMesh = new THREE.Group(); // Wrapper for legacy calls if needed
+        playerBodyMesh.add(playerBody);
+        playerBodyMesh.add(playerHead);
+        playerBodyMesh.visible = false;
+        playerGroup.add(playerBodyMesh);
+
+        // Attach camera to player group
+        playerGroup.add(camera);
+        camera.position.set(0, 1.6, 0); // 1st person view by default
+
+        // --- Materials & Blocks ---
+        const mats = {
+            grass: new THREE.MeshLambertMaterial({ color: 0x55aa55 }),
+            dirt: new THREE.MeshLambertMaterial({ color: 0x8b4513 }),
+            stone: new THREE.MeshLambertMaterial({ color: 0x888888 }),
+            sand: new THREE.MeshLambertMaterial({ color: 0xeee8aa }),
+            snow: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+            gravel: new THREE.MeshLambertMaterial({ color: 0x777777 }),
+            water: new THREE.MeshLambertMaterial({ color: 0x0077ff, transparent: true, opacity: 0.6 }),
+            wood: new THREE.MeshLambertMaterial({ color: 0x5d2e0d }),
+            leaves: new THREE.MeshLambertMaterial({ color: 0x2d8c2d }),
+            obsidian: new THREE.MeshLambertMaterial({ color: 0x110022 }),
+            netherrack: new THREE.MeshLambertMaterial({ color: 0x661111 }),
+            end_stone: new THREE.MeshLambertMaterial({ color: 0xddddaa }),
+            end_portal: new THREE.MeshLambertMaterial({ color: 0x002222 }),
+            chest: new THREE.MeshLambertMaterial({ color: 0x8b5a2b }),
+            crafting_table: new THREE.MeshLambertMaterial({ color: 0xa0522d }),
+            command_block: new THREE.MeshLambertMaterial({ color: 0xffaa00 }),
+            diamond_ore: new THREE.MeshLambertMaterial({ color: 0x888888 }), // Simplified
+            gold_ore: new THREE.MeshLambertMaterial({ color: 0x888888 }),
+            iron_ore: new THREE.MeshLambertMaterial({ color: 0x888888 }),
+            copper_ore: new THREE.MeshLambertMaterial({ color: 0x888888 }),
+            tnt: new THREE.MeshLambertMaterial({ color: 0xff2222 }),
+            bed_red: new THREE.MeshLambertMaterial({ color: 0xff0000 })
+        };
+
+        const items = ['netherite_sword', 'diamond_pickaxe', 'iron_axe', 'spear', 'apple', 'cooked_chicken', 'golden_apple', 'ender_pearl', 'blaze_rod', 'enchanted_book', 'carrot_seed'];
+        const armors = ['netherite_armor', 'diamond_armor', 'iron_armor', 'wood_armor'];
+        const allItems = Object.keys(mats).concat(items).concat(armors);
+
+        // Populate Inventory Menu
+        const invGrid = document.getElementById('inv-grid');
+        allItems.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'grid-item';
+            div.innerText = item.toUpperCase().replace('_', ' ');
+            div.onclick = () => {
+                if (item.includes('armor')) {
+                    // Equip Armor
+                    document.getElementById('armor-body').innerHTML = item.split('_')[0].toUpperCase() + '<br>🛡️';
+                    let color = 0x00aaff;
+                    if(item.includes('diamond')) color = 0x00ffff;
+                    if(item.includes('netherite')) color = 0x333333;
+                    if(item.includes('iron')) color = 0xdddddd;
+                    if(item.includes('wood')) color = 0x8b4513;
+                    playerBodyMesh.material = new THREE.MeshLambertMaterial({ color });
+                    document.getElementById('status-text').innerText = "Equipped " + item.replace('_', ' ') + "!";
+                } else {
+                    selectedItem = item;
+                    // Update active hotbar slot
+                    const activeSlot = document.querySelector('.slot.active');
+                    if (activeSlot) {
+                        activeSlot.dataset.type = item;
+                        activeSlot.innerHTML = item.split('_')[0].toUpperCase().substring(0, 6) + '<br>📦';
+                    }
+                    updateHeldItem();
+                }
+                toggleMenu('inventory-menu');
+            };
+            invGrid.appendChild(div);
+        });
+
+        // --- Player Hand / Tool ---
+        const handGroup = new THREE.Group();
+        handGroup.position.set(0.4, -0.3, -0.5);
+        camera.add(handGroup);
+
+        const armGeo = new THREE.BoxGeometry(0.12, 0.12, 0.4);
+        const armMat = new THREE.MeshLambertMaterial({ color: 0xffccaa }); // Skin
+        const arm = new THREE.Mesh(armGeo, armMat);
+        handGroup.add(arm);
+
+        const heldItemGeo = new THREE.BoxGeometry(0.15, 0.15, 0.15);
+        const heldItemMat = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
+        const heldItem = new THREE.Mesh(heldItemGeo, heldItemMat);
+        heldItem.position.set(0, 0, -0.25);
+        handGroup.add(heldItem);
+
+        function updateHeldItem() {
+            heldItem.rotation.set(0, 0, 0); // Reset rotation
+            if (mats[selectedItem]) {
+                heldItem.geometry = new THREE.BoxGeometry(0.15, 0.15, 0.15);
+                heldItem.material = mats[selectedItem];
+                heldItem.scale.set(1,1,1);
+            } else if (selectedItem === 'spear') {
+                heldItem.geometry = new THREE.CylinderGeometry(0.02, 0.02, 1.5);
+                heldItem.material = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                heldItem.scale.set(1,1,1);
+                heldItem.rotation.x = Math.PI / 2;
+            } else {
+                heldItem.geometry = new THREE.BoxGeometry(0.15, 0.15, 0.15);
+                let color = 0xaaaaaa;
+                if(selectedItem.includes('diamond')) color = 0x00ffff;
+                if(selectedItem.includes('netherite')) color = 0x333333;
+                if(selectedItem.includes('gold')) color = 0xffaa00;
+                if(selectedItem.includes('apple')) color = 0xff0000;
+                if(selectedItem.includes('chicken')) color = 0xddaa77;
+                heldItem.material = new THREE.MeshLambertMaterial({ color });
+                heldItem.scale.set(0.5, 0.5, 2); 
+            }
+        }
+        updateHeldItem();
+
+        let handAnim = 0;
+
+        // --- World Generation ---
+        function addBlock(x, y, z, type) {
+            const key = `${x},${y},${z}`;
+            if(worldBlocks.has(key)) return;
+            const block = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mats[type]);
+            block.position.set(x, y, z);
+            block.userData.type = type;
+            scene.add(block);
+            worldBlocks.set(key, block);
+        }
+
+        window.resetWorld = function() {
+            worldBlocks.forEach(b => scene.remove(b));
+            worldBlocks.clear();
+            entities.forEach(e => scene.remove(e));
+            entities.length = 0;
+            playerGroup.position.set(0, 5, 0);
+            toggleMenu('settings-menu');
+        }
+
+        function updateWorld(px, pz) {
+            for(let x = px-renderDistance; x < px+renderDistance; x++) {
+                for(let z = pz-renderDistance; z < pz+renderDistance; z++) {
+                    const key = `${x},0,${z}`;
+                    if(!worldBlocks.has(key)) {
+                        if (currentDimension === 'nether') {
+                            addBlock(x, 0, z, 'netherrack');
+                            if(Math.random() > 0.95) addBlock(x, 1, z, 'obsidian'); 
+                        } else if (currentDimension === 'end') {
+                            if (Math.sqrt(x*x + z*z) < 40) {
+                                addBlock(x, 0, z, 'end_stone');
+                                if(Math.random() > 0.98) addBlock(x, 1, z, 'obsidian'); // Pillars
+                            }
+                        } else {
+                            // Overworld with Biomes & Caves
+                            let type = 'grass';
+                            let height = 0;
+                            
+                            // Simple biome noise
+                            let biomeVal = Math.sin(x*0.1) + Math.cos(z*0.1);
+                            if (biomeVal > 1) type = 'sand';
+                            else if (biomeVal < -1) type = 'snow';
+                            else if (Math.random() > 0.95) type = 'gravel';
+                            
+                            if (Math.abs(x) < 5 && Math.abs(z) < 5) type = 'water';
+                            
+                            addBlock(x, height, z, type);
+                            addBlock(x, height-1, z, 'dirt');
+                            
+                            // Caves & Ores
+                            for(let y=-2; y>-6; y--) {
+                                if(Math.random() > 0.2) { // 20% chance of cave air
+                                    let oreType = 'stone';
+                                    if(Math.random() > 0.95) oreType = 'iron_ore';
+                                    if(Math.random() > 0.98) oreType = 'gold_ore';
+                                    if(Math.random() > 0.99) oreType = 'diamond_ore';
+                                    addBlock(x, y, z, oreType);
+                                }
+                            }
+                            
+                            // Trees & Farms
+                            if (type === 'grass' && Math.random() > 0.98) {
+                                addBlock(x, 1, z, 'wood');
+                                addBlock(x, 2, z, 'wood');
+                                addBlock(x, 3, z, 'leaves');
+                                addBlock(x+1, 2, z, 'leaves');
+                                addBlock(x-1, 2, z, 'leaves');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Mobs & AI ---
+        function spawnMob(type, x, z) {
+            const g = new THREE.Group();
+            let color = 0xffffff, height = 1.5, hp = 20, speed = 0.03, isHostile = false;
+            
+            if (type === 'zombie') { color = 0x00ff00; hp = 20; isHostile = true; }
+            else if (type === 'skeleton') { color = 0xdddddd; hp = 20; isHostile = true; }
+            else if (type === 'enderman') { color = 0x111111; hp = 40; height = 2.5; isHostile = true; speed = 0.06; }
+            else if (type === 'creeper') { color = 0x22aa22; hp = 20; isHostile = true; }
+            else if (type === 'cow') { color = 0x8b4513; hp = 10; height = 1.0; }
+            else if (type === 'sheep') { color = 0xeeeeee; hp = 8; height = 1.0; }
+            else if (type === 'chicken') { color = 0xffffff; hp = 4; height = 0.5; }
+            else if (type === 'villager') { color = 0xd2b48c; hp = 20; height = 1.8; }
+            else if (type === 'iron_golem') { color = 0xcccccc; hp = 100; height = 2.8; speed = 0.02; }
+            else if (type === 'dragon') { color = 0x000000; hp = 200; height = 4.0; isHostile = true; speed = 0.1; }
+
+            const bodyHeight = height * 0.7;
+            const headSize = height * 0.3;
+            
+            // Character Body
+            const body = new THREE.Mesh(new THREE.BoxGeometry(height*0.5, bodyHeight, height*0.3), new THREE.MeshLambertMaterial({color}));
+            body.position.y = bodyHeight / 2;
+            g.add(body); 
+            
+            // Character Head
+            const head = new THREE.Mesh(new THREE.BoxGeometry(headSize, headSize, headSize), new THREE.MeshLambertMaterial({color: type==='enderman' ? 0x111111 : (type==='skeleton' ? 0xdddddd : (type==='villager' ? 0x996633 : color))}));
+            head.position.y = bodyHeight + headSize / 2;
+            g.add(head);
+
+            g.position.set(x, 0.5, z); // Start slightly above y=0 surface
+            g.userData = { type, hp, maxHp: hp, isHostile, speed, height };
+            scene.add(g); 
+            entities.push(g);
+        }
+
+        // --- TNT Logic ---
+        function explode(ex, ey, ez) {
+            for(let dx=-2; dx<=2; dx++) {
+                for(let dy=-2; dy<=2; dy++) {
+                    for(let dz=-2; dz<=2; dz++) {
+                        if(dx*dx + dy*dy + dz*dz <= 8) {
+                            let key = `${ex+dx},${ey+dy},${ez+dz}`;
+                            if(worldBlocks.has(key)) {
+                                scene.remove(worldBlocks.get(key));
+                                worldBlocks.delete(key);
+                            }
+                        }
+                    }
+                }
+            }
+            // Damage nearby mobs/player
+            let distToPlayer = playerGroup.position.distanceTo(new THREE.Vector3(ex,ey,ez));
+            if(distToPlayer < 4 && gameMode !== 'creative' && gameMode !== 'spectator') {
+                playerHP -= (20 - distToPlayer*4);
+            }
+        }
+
+        // --- UI & Modes ---
+        window.startGame = function() {
+            const name = document.getElementById('player-name').value || 'Steve';
+            document.getElementById('player-nametag').innerText = `Player: ${name}`;
+            document.getElementById('intro-screen').style.display = 'none';
+            ['ui-title', 'crosshair', 'ui-overlay'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'block'; });
+            ['top-btns', 'controls', 'hotbar'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'flex'; });
+            gameStarted = true;
+            socket.emit('join', { name });
+            setTimeout(onWindowResize, 100);
+        }
+
+        window.onWindowResize = function() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+        window.addEventListener('resize', onWindowResize, false);
+        setTimeout(onWindowResize, 500);
+
+        socket.on('currentPlayers', (players) => {
+            document.getElementById('online-count').innerText = `Online: ${players.length}`;
+            players.forEach(p => {
+                if(p.id !== socket.id) addOtherPlayer(p);
+            });
+        });
+        socket.on('playerJoined', (p) => {
+            addOtherPlayer(p);
+            document.getElementById('online-count').innerText = `Online: ${otherPlayers.size + 1}`;
+        });
+        socket.on('playerLeft', (id) => {
+            if(otherPlayers.has(id)) {
+                scene.remove(otherPlayers.get(id));
+                otherPlayers.delete(id);
+                document.getElementById('online-count').innerText = `Online: ${otherPlayers.size + 1}`;
+            }
+        });
+        socket.on('playerMoved', (p) => {
+            if(otherPlayers.has(p.id)) {
+                const mesh = otherPlayers.get(p.id);
+                mesh.position.set(p.x, p.y, p.z);
+                mesh.rotation.y = p.ry;
+            }
+        });
+
+        function addOtherPlayer(p) {
+            const g = new THREE.Group();
+            const color = Math.random() * 0xffffff;
+            
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, 0.4), new THREE.MeshLambertMaterial({ color }));
+            body.position.y = 0.6;
+            g.add(body);
+            
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshLambertMaterial({ color: 0xffccaa }));
+            head.position.y = 1.4;
+            g.add(head);
+
+            g.position.set(p.x, p.y, p.z);
+            scene.add(g);
+            otherPlayers.set(p.id, g);
+        }
+
+        window.trade = function(costItem, receiveItem) {
+            document.getElementById('status-text').innerText = `Traded for ${receiveItem}!`;
+            toggleMenu('trading-menu');
+        };
+
+        window.craft = function(reqItem, reqCount, receiveItem) {
+            document.getElementById('status-text').innerText = `Crafted ${receiveItem}!`;
+            toggleMenu('crafting-menu');
+        };
+
+        window.cycleMode = function() {
+            currentModeIdx = (currentModeIdx + 1) % modes.length;
+            gameMode = modes[currentModeIdx];
+            const btn = document.getElementById('mode-btn');
+            btn.innerText = gameMode.toUpperCase();
+            btn.style.color = gameMode === 'hardcore' ? '#ff0000' : gameMode === 'creative' ? '#00ffff' : 'gold';
+            btn.style.borderColor = btn.style.color;
+        }
+
+        window.switchCamera = function() {
+            isThirdPerson = !isThirdPerson;
+            if (isThirdPerson) {
+                camera.position.set(0, 2.5, 4);
+                camera.lookAt(0, 1, 0);
+                playerBodyMesh.visible = true;
+                handGroup.visible = false;
+            } else {
+                camera.position.set(0, 1.6, 0);
+                camera.rotation.set(0,0,0);
+                playerBodyMesh.visible = false;
+                handGroup.visible = true;
+            }
+        }
+
+        window.toggleMenu = function(id) { 
+            const m = document.getElementById(id); 
+            m.style.display = m.style.display === 'block' ? 'none' : 'block'; 
+        };
+
+        window.respawn = function() {
+            playerHP = 100; hunger = 100; xp = 0;
+            playerGroup.position.set(0, 5, 0);
+            document.getElementById('death-screen').style.display = 'none';
+            if(gameMode === 'hardcore') {
+                resetWorld();
+                gameMode = 'survival';
+                document.getElementById('mode-btn').innerText = 'SURVIVAL';
+            }
+        }
+
+        function updateUI() {
+            if (playerHP <= 0 && document.getElementById('death-screen').style.display !== 'flex') {
+                document.getElementById('death-screen').style.display = 'flex';
+            }
+
+            let hStr = ''; 
+            for(let i=0; i<10; i++) hStr += (i < Math.ceil(playerHP/10)) ? '❤️' : '🖤';
+            document.getElementById('hearts').innerText = hStr;
+
+            let fStr = ''; 
+            for(let i=0; i<10; i++) fStr += (i < Math.ceil(hunger/10)) ? '🍗' : '🦴';
+            document.getElementById('food').innerText = fStr;
+
+            document.getElementById('xp-fill').style.width = (xp % 100) + '%';
+            document.getElementById('xp-level').innerText = level;
+            
+            document.getElementById('status-text').innerText = `Dim: ${currentDimension.toUpperCase()} | ${isSwimming ? 'Swimming' : 'Grounded'}`;
+        }
+
+        // --- Controls ---
+        let moveDir = {f:0, r:0}, lon=0, lat=0, touchX, touchY;
+        
+        // PC Keyboard Controls
+        const keys = {};
+        window.addEventListener('keydown', e => { 
+            keys[e.code] = true;
+            if(e.code === 'KeyE') toggleMenu('inventory-menu');
+            if(e.code === 'Digit1') selectSlot(0);
+            if(e.code === 'Digit2') selectSlot(1);
+            if(e.code === 'Digit3') selectSlot(2);
+            if(e.code === 'Digit4') selectSlot(3);
+            if(e.code === 'Digit5') selectSlot(4);
+            if(e.code === 'Space') jump();
+        });
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        function updatePCMovement() {
+            let f = 0, r = 0;
+            if(keys['KeyW'] || keys['ArrowUp']) f += 1;
+            if(keys['KeyS'] || keys['ArrowDown']) f -= 1;
+            if(keys['KeyA'] || keys['ArrowLeft']) r -= 1;
+            if(keys['KeyD'] || keys['ArrowRight']) r += 1;
+            
+            // For remote buttons (TV)
+            if(f !== 0 || r !== 0) moveDir = { f, r };
+            else if(moveDir.f !== 0 || moveDir.r !== 0) {
+                 // only reset if no joystick movement
+                 if(!stickActive) moveDir = {f:0, r:0};
+            }
+        }
+
+        // Mouse Look
+        let stickActive = false;
+        document.addEventListener('mousemove', e => {
+            if (document.pointerLockElement === document.body) {
+                lon += e.movementX * 0.1;
+                lat -= e.movementY * 0.1;
+            }
+        });
+
+        renderer.domElement.addEventListener('click', () => {
+            if(gameStarted) document.body.requestPointerLock();
+        });
+
+        const stick = document.getElementById('stick');
+        stick.ontouchmove = e => {
+            stickActive = true;
+            const rect = stick.parentElement.getBoundingClientRect();
+            let dx = (e.touches[0].pageX - rect.left - 55)/55;
+            let dy = (e.touches[0].pageY - rect.top - 55)/55;
+            moveDir = { f: -dy, r: dx };
+            stick.style.transform = `translate(${dx*30}px, ${dy*30}px)`;
+        };
+        stick.ontouchend = () => { 
+            stickActive = false;
+            moveDir = {f:0, r:0}; 
+            stick.style.transform = 'none'; 
+        };
+
+        document.ontouchmove = e => {
+            if(e.touches[0].pageX > window.innerWidth/2) {
+                if(touchX) { lon += (e.touches[0].pageX-touchX)*0.4; lat -= (e.touches[0].pageY-touchY)*0.4; }
+                touchX = e.touches[0].pageX; touchY = e.touches[0].pageY;
+            }
+        };
+        document.ontouchend = () => { touchX = null; touchY = null; };
+
+        function jump() {
+            if (gameMode === 'spectator' || gameMode === 'creative') {
+                playerGroup.position.y += 1;
+            } else if (isSwimming) {
+                velocityY = 0.08;
+            } else if (isGrounded) {
+                velocityY = 0.15;
+                isGrounded = false;
+            }
+        }
+
+        function selectSlot(idx) {
+            const slots = document.querySelectorAll('.slot');
+            if(slots[idx]) {
+                slots.forEach(sl => sl.classList.remove('active'));
+                slots[idx].classList.add('active'); 
+                selectedItem = slots[idx].dataset.type;
+                updateHeldItem();
+            }
+        }
+
+        // --- Interaction ---
+        const raycaster = new THREE.Raycaster();
+        
+        // PC Mouse Interaction
+        document.addEventListener('mousedown', e => {
+            if (document.pointerLockElement === document.body) {
+                if(e.button === 0) document.getElementById('btn-hit').click();
+                if(e.button === 2) document.getElementById('btn-place').click();
+            }
+        });
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        document.getElementById('btn-hit').onclick = () => {
+            if(gameMode === 'spectator') return;
+            handAnim = 1; 
+            
+            // Raycast from player center if 3rd person, else camera
+            let origin = isThirdPerson ? playerGroup.position.clone().add(new THREE.Vector3(0,1.6,0)) : camera.position;
+            let dir = new THREE.Vector3(0,0,-1).applyQuaternion(playerGroup.quaternion);
+            if(!isThirdPerson) dir.applyQuaternion(camera.quaternion);
+            
+            raycaster.set(origin, dir);
+            const hits = raycaster.intersectObjects([...Array.from(worldBlocks.values()), ...entities], true);
+            
+            if(hits.length > 0 && hits[0].distance < 6) {
+                const target = hits[0].object.parent && hits[0].object.parent.userData.type ? hits[0].object.parent : hits[0].object;
+                
+                if(target.userData && target.userData.hp) { 
+                    if (target.userData.type === 'villager') {
+                        toggleMenu('trading-menu');
+                        return;
+                    }
+                    // Hit Mob
+                    let dmg = selectedItem.includes('sword') ? 15 : (selectedItem.includes('axe') ? 10 : 2);
+                    target.userData.hp -= dmg;
+                    
+                    target.position.add(dir.multiplyScalar(0.5)); // Knockback
+
+                    if(target.userData.hp <= 0) { 
+                        scene.remove(target); 
+                        entities.splice(entities.indexOf(target), 1); 
+                        xp += target.userData.type === 'dragon' ? 500 : 10;
+                        if(xp >= 100) { level += Math.floor(xp/100); xp = xp%100; }
+                    }
+                } else { 
+                    // Mine Block
+                    if(target.userData.type === 'tnt') {
+                        explode(target.position.x, target.position.y, target.position.z);
+                    } else if (target.userData.type === 'crafting_table') {
+                        toggleMenu('crafting-menu');
+                        return;
+                    } else {
+                        scene.remove(target);
+                        worldBlocks.delete(`${target.position.x},${target.position.y},${target.position.z}`);
+                    }
+                }
+            }
+        };
+
+        document.getElementById('btn-place').onclick = () => {
+            if(gameMode === 'spectator') return;
+            handAnim = 1;
+            
+            // Eating logic
+            if(selectedItem.includes('apple') || selectedItem.includes('chicken')) {
+                hunger = Math.min(100, hunger + 20);
+                if(selectedItem === 'golden_apple') playerHP = Math.min(100, playerHP + 40);
+                document.getElementById('status-text').innerText = "Ate " + selectedItem.replace('_', ' ') + "!";
+                updateUI();
+                return;
+            }
+
+            // Ender Pearl logic
+            if (selectedItem === 'ender_pearl') {
+                let origin = isThirdPerson ? playerGroup.position.clone().add(new THREE.Vector3(0,1.6,0)) : camera.position;
+                let dir = new THREE.Vector3(0,0,-1).applyQuaternion(playerGroup.quaternion);
+                if(!isThirdPerson) dir.applyQuaternion(camera.quaternion);
+                
+                raycaster.set(origin, dir);
+                const hits = raycaster.intersectObjects(Array.from(worldBlocks.values()));
+                if(hits.length > 0) {
+                    const p = hits[0].point;
+                    playerGroup.position.set(p.x, p.y + 2, p.z);
+                    document.getElementById('status-text').innerText = "Teleported!";
+                    updateUI();
+                }
+                return;
+            }
+
+            if(!mats[selectedItem]) return; // Not a placeable block
+            
+            let origin = isThirdPerson ? playerGroup.position.clone().add(new THREE.Vector3(0,1.6,0)) : camera.position;
+            let dir = new THREE.Vector3(0,0,-1).applyQuaternion(playerGroup.quaternion);
+            if(!isThirdPerson) dir.applyQuaternion(camera.quaternion);
+            
+            raycaster.set(origin, dir);
+            const hits = raycaster.intersectObjects(Array.from(worldBlocks.values()));
+            if(hits.length > 0 && hits[0].distance < 6) {
+                const p = hits[0].object.position;
+                const n = hits[0].face.normal;
+                addBlock(p.x+n.x, p.y+n.y, p.z+n.z, selectedItem);
+                
+                // Dimension Portals
+                if (selectedItem === 'netherrack' && currentDimension !== 'nether') {
+                    currentDimension = 'nether';
+                    resetWorld();
+                    scene.background = new THREE.Color(0x330000);
+                } else if (selectedItem === 'end_portal' && currentDimension !== 'end') {
+                    currentDimension = 'end';
+                    resetWorld();
+                    scene.background = new THREE.Color(0x050511);
+                    spawnMob('dragon', 0, -20);
+                } else if (selectedItem === 'grass' && currentDimension !== 'overworld') {
+                    currentDimension = 'overworld';
+                    resetWorld();
+                    scene.background = new THREE.Color(0x87ceeb);
+                }
+            }
+        };
+
+        document.getElementById('btn-jump').onclick = jump;
+
+        document.getElementById('btn-play').onclick = startGame;
+
+        // --- Main Loop ---
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(10, 20, 10); scene.add(sun);
+        scene.background = new THREE.Color(0x87ceeb);
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!gameStarted) {
+                updateWorld(0, 0);
+                camera.position.set(Math.sin(Date.now() * 0.0005) * 15, 10, Math.cos(Date.now() * 0.0005) * 15);
+                camera.lookAt(0, 5, 0);
+                renderer.render(scene, camera);
+                return;
+            }
+
+            if(playerHP <= 0) {
+                renderer.render(scene, camera);
+                return;
+            }
+
+            const px = Math.round(playerGroup.position.x);
+            const pz = Math.round(playerGroup.position.z);
+            updateWorld(px, pz);
+
+            // Hand Animation
+            if (handAnim > 0) {
+                handGroup.rotation.x = Math.sin(handAnim * Math.PI) * -0.5;
+                handAnim -= 0.1;
+            } else {
+                handGroup.rotation.x = 0;
+            }
+
+            // Rotation (Apply to player group for 3rd person, or camera for 1st)
+            lat = Math.max(-85, Math.min(85, lat));
+            if(isThirdPerson) {
+                playerGroup.rotation.y = lon * Math.PI/180;
+                // Camera pitch in 3rd person
+                camera.position.y = 2.5 + Math.sin(lat * Math.PI/180) * 4;
+                camera.position.z = Math.cos(lat * Math.PI/180) * 4;
+                camera.lookAt(0, 1, 0);
+            } else {
+                playerGroup.rotation.y = lon * Math.PI/180;
+                camera.rotation.x = lat * Math.PI/180;
+            }
+
+            // Check if in water
+            const currentBlock = worldBlocks.get(`${px},0,${pz}`);
+            isSwimming = currentBlock && currentBlock.userData.type === 'water';
+            
+            if (document.pointerLockElement === document.body || Object.values(keys).some(v => v)) {
+                updatePCMovement();
+            }
+
+            // Movement Speed
+            let speed = (isSwimming ? 0.05 : 0.12);
+            if(gameMode === 'spectator') speed = 0.3;
+            
+            playerGroup.translateZ(moveDir.f * speed);
+            playerGroup.translateX(moveDir.r * speed);
+
+            // Gravity & Physics
+            if (gameMode !== 'spectator' && gameMode !== 'creative') {
+                playerGroup.position.y += velocityY;
+                if (isSwimming) {
+                    velocityY -= 0.002;
+                    if (playerGroup.position.y < 0.6) playerGroup.position.y = 0.6;
+                } else {
+                    if (playerGroup.position.y > 0.55) {
+                        velocityY -= 0.01;
+                        isGrounded = false;
+                    } else { 
+                        playerGroup.position.y = 0.5; // Top of ground block at y=0 is 0.5
+                        velocityY = 0; 
+                        isGrounded = true; 
+                    }
+                }
+            }
+
+            // Survival Mechanics
+            if (gameMode === 'survival' || gameMode === 'hardcore') {
+                hunger -= 0.005;
+                if (hunger < 0) { hunger = 0; playerHP -= 0.1; }
+                if (isSwimming && playerGroup.position.y <= 1.1) playerHP -= 0.2; // Drowning
+            }
+
+            // Mobs AI
+            entities.forEach(m => {
+                if(!m.userData) return;
+                const dist = playerGroup.position.distanceTo(m.position);
+                
+                if (m.userData.type === 'dragon') {
+                    // Dragon flies around
+                    m.position.y = 15 + Math.sin(Date.now() * 0.001) * 5;
+                    m.rotation.y += 0.02;
+                    m.translateZ(m.userData.speed);
+                } else if (dist > 15) {
+                    m.rotation.y += (Math.random() - 0.5) * 0.1;
+                    m.translateZ(0.01);
+                } else if (m.userData.isHostile && gameMode !== 'spectator' && gameMode !== 'creative') {
+                    m.lookAt(playerGroup.position.x, m.position.y, playerGroup.position.z);
+                    m.translateZ(m.userData.speed);
+                    if(dist < 1.5) playerHP -= 0.5;
+                }
+                
+                if(m.userData.type !== 'dragon') {
+                    // Mobs stay grounded (height offset for their feet at y=0.5 surface)
+                    m.position.y = 0.5; 
+                }
+            });
+
+            // Random Mob Spawning
+            if (Math.random() < 0.01 && entities.length < 15 && currentDimension === 'overworld') {
+                const types = ['zombie', 'skeleton', 'creeper', 'enderman', 'cow', 'sheep', 'chicken', 'villager', 'iron_golem'];
+                let type = types[Math.floor(Math.random() * types.length)];
+                spawnMob(type, px + (Math.random()-0.5)*40, pz + (Math.random()-0.5)*40);
+            }
+
+            // Multiplayer Sync
+            if (Math.random() < 0.1) { // Throttle updates
+                socket.emit('move', {
+                    x: playerGroup.position.x,
+                    y: playerGroup.position.y,
+                    z: playerGroup.position.z,
+                    ry: playerGroup.rotation.y
+                });
+            }
+
+            updateUI();
+            renderer.render(scene, camera);
+        }
+
+        // Hotbar selection
+        document.querySelectorAll('.slot').forEach(s => s.onclick = () => {
+            document.querySelectorAll('.slot').forEach(sl => sl.classList.remove('active'));
+            s.classList.add('active'); 
+            selectedItem = s.dataset.type;
+            updateHeldItem();
+        });
+
+        animate();
+    </script>
+</body>
+</html>

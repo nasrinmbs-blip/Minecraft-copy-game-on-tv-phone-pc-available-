@@ -1,0 +1,5 @@
+{
+  "name": "Remix: Minecraft Clone",
+  "description": "A voxel-based survival and creative game built with React and Three.js.",
+  "requestFramePermissions": []
+}
