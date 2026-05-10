@@ -80,10 +80,11 @@
     <div id="intro-screen" style="background: #3b2514 url('https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/master/assets/minecraft/textures/block/dirt.png') repeat; background-size: 128px 128px; image-rendering: pixelated; box-shadow: inset 0 0 200px rgba(0,0,0,0.9);">
         <!-- Background Logo Watermark -->
         <img src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" alt="Branding" style="position: absolute; top: 20px; left: 20px; width: 80px; opacity: 0.3; pointer-events: none;">
+        <img src="input_file_0.png" alt="Decorative Logo" style="position: absolute; bottom: 20px; right: 20px; width: 60px; opacity: 0.6; pointer-events: none; filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));">
         
         <div style="position: relative; text-align: center; margin-bottom: 20px;">
             <img src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" alt="Minecraft Logo" style="width: 200px; margin-bottom: 10px; filter: drop-shadow(0px 5px 5px rgba(0,0,0,0.5));">
-            <img src="https://static.wikia.nocookie.net/minecraft_gamepedia/images/1/1a/Grass_Block.png" alt="Grass Block" style="width: 80px; height: 80px; filter: drop-shadow(0px 15px 15px rgba(0,0,0,0.9)); margin-bottom: 20px;">
+            <img src="input_file_0.png" alt="Grass Block" style="width: 80px; height: 80px; filter: drop-shadow(0px 15px 15px rgba(0,0,0,0.9)); margin-bottom: 20px;">
             <div style="font-family: 'Segoe UI', sans-serif; font-weight: 900; font-size: 38px; color: #ffeb3b; text-transform: uppercase; letter-spacing: 2px; text-shadow: 4px 4px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; line-height: 1; padding: 10px;">
                 Minecraft <span style="display: block; font-size: 24px; color: #fff;">free edition</span>
                 <div class="splash-text" style="right: -40px; bottom: -10px; font-size: 24px; color: #ffeb3b;">Free Edition!</div>
@@ -171,6 +172,13 @@
             
             <label>Seed: </label>
             <input type="text" value="998273" style="width: 80px; background: #222; color: white; border: 1px solid #555;"><br>
+            
+            <div style="margin-top: 10px; padding: 5px; background: rgba(0,0,0,0.5); border: 1px solid #444;">
+                <strong>DIMENSIONS:</strong><br>
+                <button onclick="switchDim('overworld')" style="padding: 3px; font-size: 10px; background: #2e7d32; color: white; border: none; margin: 2px;">OVERWORLD</button>
+                <button onclick="switchDim('nether')" style="padding: 3px; font-size: 10px; background: #c62828; color: white; border: none; margin: 2px;">NETHER</button>
+                <button onclick="switchDim('end')" style="padding: 3px; font-size: 10px; background: #4527a0; color: white; border: none; margin: 2px;">THE END</button>
+            </div>
             
             <button onclick="resetWorld()" style="margin-top: 10px; padding: 5px; background: #aa0000; color: white; border: none;">GENERATE NEW WORLD</button>
             <button onclick="toggleMenu('addons-menu')" style="margin-top: 10px; padding: 5px; background: #4b0082; color: white; border: none; display: block; width: 100%;">🧩 ADD-ON SETTINGS</button>
@@ -440,13 +448,19 @@
             worldBlocks.set(key, block);
         }
 
-        window.resetWorld = function() {
+        window.resetWorld = function(showMenu = true) {
             worldBlocks.forEach(b => scene.remove(b));
             worldBlocks.clear();
             entities.forEach(e => scene.remove(e));
             entities.length = 0;
             playerGroup.position.set(0, 5, 0);
-            toggleMenu('settings-menu');
+            if(showMenu) toggleMenu('settings-menu');
+            
+            // Re-generate nearby world immediately
+            const px = Math.floor(playerGroup.position.x);
+            const pz = Math.floor(playerGroup.position.z);
+            updateWorld(px, pz);
+            updateUI();
         }
 
         function updateWorld(px, pz) {
@@ -839,6 +853,23 @@
             }
         };
 
+        window.switchDim = function(dim) {
+            if (currentDimension === dim) return;
+            currentDimension = dim;
+            resetWorld(false);
+            if (dim === 'nether') {
+                scene.background = new THREE.Color(0x330000);
+            } else if (dim === 'end') {
+                scene.background = new THREE.Color(0x050511);
+                spawnMob('dragon', 0, -20);
+            } else {
+                scene.background = new THREE.Color(0x87ceeb);
+            }
+            document.getElementById('status-text').innerText = "Entering " + dim.toUpperCase() + "...";
+            updateUI();
+            toggleMenu('settings-menu');
+        }
+
         document.getElementById('btn-place').onclick = () => {
             if(gameMode === 'spectator') return;
             handAnim = 1;
@@ -884,18 +915,11 @@
                 
                 // Dimension Portals
                 if (selectedItem === 'netherrack' && currentDimension !== 'nether') {
-                    currentDimension = 'nether';
-                    resetWorld();
-                    scene.background = new THREE.Color(0x330000);
+                    switchDim('nether');
                 } else if (selectedItem === 'end_portal' && currentDimension !== 'end') {
-                    currentDimension = 'end';
-                    resetWorld();
-                    scene.background = new THREE.Color(0x050511);
-                    spawnMob('dragon', 0, -20);
+                    switchDim('end');
                 } else if (selectedItem === 'grass' && currentDimension !== 'overworld') {
-                    currentDimension = 'overworld';
-                    resetWorld();
-                    scene.background = new THREE.Color(0x87ceeb);
+                    switchDim('overworld');
                 }
             }
         };
@@ -950,8 +974,9 @@
                 camera.rotation.x = lat * Math.PI/180;
             }
 
-            // Check if in water
-            const currentBlock = worldBlocks.get(`${px},0,${pz}`);
+            // Check if in/on water
+            const py_idx = Math.floor(playerGroup.position.y);
+            const currentBlock = worldBlocks.get(`${px},${py_idx},${pz}`);
             isSwimming = currentBlock && currentBlock.userData.type === 'water';
             
             if (document.pointerLockElement === document.body || Object.values(keys).some(v => v)) {
@@ -968,15 +993,28 @@
             // Gravity & Physics
             if (gameMode !== 'spectator' && gameMode !== 'creative') {
                 playerGroup.position.y += velocityY;
+                
+                // Find floor below
+                let floorY = -20;
+                for(let y = Math.floor(playerGroup.position.y - 0.1); y >= -10; y--) {
+                    if(worldBlocks.has(`${px},${y},${pz}`)) {
+                        const block = worldBlocks.get(`${px},${y},${pz}`);
+                        if(block.userData.type !== 'water') {
+                            floorY = y + 0.5;
+                            break;
+                        }
+                    }
+                }
+
                 if (isSwimming) {
                     velocityY -= 0.002;
-                    if (playerGroup.position.y < 0.6) playerGroup.position.y = 0.6;
+                    if (playerGroup.position.y < py_idx + 0.6) playerGroup.position.y = py_idx + 0.6;
                 } else {
-                    if (playerGroup.position.y > 0.55) {
+                    if (playerGroup.position.y > floorY + 0.1) {
                         velocityY -= 0.01;
                         isGrounded = false;
                     } else { 
-                        playerGroup.position.y = 0.5; // Top of ground block at y=0 is 0.5
+                        playerGroup.position.y = floorY; 
                         velocityY = 0; 
                         isGrounded = true; 
                     }
